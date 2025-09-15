@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notulen Rapat - STAI Al-Mas'udiyah Sukabumi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Konfigurasi Firebase (gunakan konfigurasi Anda sendiri)
+const firebaseConfig = {
+  apiKey: "AIzaSyCOto6k9Yspwnygkte2wvrI1lodhGVNs_k",
+  authDomain: "notulenrapat-d99c3.firebaseapp.com",
+  projectId: "notulenrapat-d99c3",
+  storageBucket: "notulenrapat-d99c3.firebasestorage.app",
+  messagingSenderId: "104635628546",
+  appId: "1:104635628546:web:d2e3b63ca4165718073b1b"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.doc = doc;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .signature-pad {
+            border: 2px dashed #d1d5db;
+            background: #f9fafb;
+        }
+        /* Custom scrollbar untuk webkit browsers */
+        #notulenList::-webkit-scrollbar {
+            width: 6px;
+        }
+        #notulenList::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        #notulenList::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        #notulenList::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-center mb-4">
+                <img src="https://iili.io/KdXnlX2.png" alt="Logo STAI Al-Mas'udiyah" class="h-16 w-16 mr-4" onerror="this.style.display='none';">
+                <div class="text-center">
+                    <h1 class="text-3xl font-bold text-gray-800">NOTULEN RAPAT</h1>
+                    <p class="text-lg text-gray-600">STAI Al-Mas'udiyah Sukabumi</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Notulen -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <form id="notulenForm" class="space-y-6">
+                <!-- Judul Rapat -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Rapat</label>
+                    <input type="text" id="judul" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Masukkan judul rapat" required>
+                </div>
+
+                <!-- Waktu dan Tempat -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal & Waktu</label>
+                        <input type="datetime-local" id="waktu" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tempat</label>
+                        <input type="text" id="tempat" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Lokasi rapat" required>
+                    </div>
+                </div>
+
+                <!-- Peserta Rapat -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Peserta Rapat</label>
+                    <div id="pesertaContainer">
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" class="peserta-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nama peserta">
+                            <button type="button" onclick="hapusPeserta(this)" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Hapus</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="tambahPeserta()" class="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">+ Tambah Peserta</button>
+                </div>
+
+                <!-- Notulis -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Notulis</label>
+                    <input type="text" id="notulis" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nama notulis" required>
+                </div>
+
+                <!-- Agenda -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Agenda Rapat</label>
+                    <textarea id="agenda" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Daftar agenda yang akan dibahas" required></textarea>
+                </div>
+
+                <!-- Risalah -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Risalah Rapat</label>
+                    <textarea id="risalah" rows="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Jalannya rapat dan pembahasan" required></textarea>
+                </div>
+
+                <!-- Hasil Rapat -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Hasil Rapat</label>
+                    <textarea id="hasil" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Keputusan dan hasil rapat" required></textarea>
+                </div>
+
+                <!-- Rencana Tindak Lanjut -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Rencana Tindak Lanjut</label>
+                    <textarea id="tindakLanjut" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Langkah-langkah yang akan dilakukan" required></textarea>
+                </div>
+
+                <!-- Tanda Tangan Notulis -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Tanda Tangan Notulis</label>
+                    <div class="signature-pad w-full h-32 rounded-lg flex items-center justify-center cursor-pointer" onclick="buatTandaTangan()">
+                        <span class="text-gray-500" id="signatureText">Klik untuk membuat tanda tangan</span>
+                        <canvas id="signatureCanvas" class="hidden w-full h-full"></canvas>
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                        <button type="button" onclick="hapusTandaTangan()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Hapus Tanda Tangan</button>
+                    </div>
+                </div>
+
+                <!-- Tombol Submit -->
+                <div class="flex gap-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold">Simpan Notulen</button>
+                    <button type="button" onclick="resetForm()" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Reset</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Daftar Notulen Tersimpan -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Notulen Tersimpan</h2>
+            <div id="notulenList" class="space-y-4 max-h-96 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #cbd5e0 #f7fafc;">
+                <p class="text-gray-500 text-center py-8">Memuat data notulen...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Notulen -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-gray-800">Detail Notulen</h3>
+                    <button onclick="tutupModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div id="detailContent" class="space-y-4"></div>
+                <div class="mt-6 flex gap-4">
+                    <button onclick="cetakNotulen()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">Cetak PDF</button>
+                    <button onclick="tutupModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSignature = null;
+        let currentNotulenId = null;
+
+        // Fungsi untuk menambah peserta
+        function tambahPeserta() {
+            const container = document.getElementById('pesertaContainer');
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 mb-2';
+            div.innerHTML = `
+                <input type="text" class="peserta-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nama peserta">
+                <button type="button" onclick="hapusPeserta(this)" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Hapus</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // Fungsi untuk menghapus peserta
+        function hapusPeserta(button) {
+            button.parentElement.remove();
+        }
+
+        // Fungsi untuk membuat tanda tangan
+        function buatTandaTangan() {
+            const canvas = document.getElementById('signatureCanvas');
+            const text = document.getElementById('signatureText');
+            
+            canvas.classList.remove('hidden');
+            text.classList.add('hidden');
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            let isDrawing = false;
+            
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#000';
+                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.stroke();
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+                currentSignature = canvas.toDataURL();
+            }
+            
+            function handleTouch(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                                 e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+        }
+
+        // Fungsi untuk menghapus tanda tangan
+        function hapusTandaTangan() {
+            const canvas = document.getElementById('signatureCanvas');
+            const text = document.getElementById('signatureText');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.classList.add('hidden');
+            text.classList.remove('hidden');
+            currentSignature = null;
+        }
+
+        // Fungsi untuk reset form
+        function resetForm() {
+            document.getElementById('notulenForm').reset();
+            hapusTandaTangan();
+            
+            // Reset peserta ke satu input
+            const container = document.getElementById('pesertaContainer');
+            container.innerHTML = `
+                <div class="flex gap-2 mb-2">
+                    <input type="text" class="peserta-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nama peserta">
+                    <button type="button" onclick="hapusPeserta(this)" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Hapus</button>
+                </div>
+            `;
+        }
+
+        // Fungsi untuk menyimpan notulen
+        async function simpanNotulen(data) {
+            try {
+                // Simulasi penyimpanan ke Firebase
+                // Dalam implementasi nyata, gunakan konfigurasi Firebase yang benar
+                console.log('Data yang akan disimpan:', data);
+                
+                // Simulasi ID dokumen
+                const docId = 'doc_' + Date.now();
+                
+                // Simpan ke localStorage sebagai fallback
+                let savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+                data.id = docId;
+                data.createdAt = new Date().toISOString();
+                savedNotulens.unshift(data);
+                localStorage.setItem('notulens', JSON.stringify(savedNotulens));
+                
+                return docId;
+            } catch (error) {
+                console.error('Error menyimpan notulen:', error);
+                throw error;
+            }
+        }
+
+        // Fungsi untuk memuat notulen
+        async function muatNotulen() {
+            try {
+                // Simulasi memuat dari Firebase
+                // Dalam implementasi nyata, gunakan getDocs dari Firestore
+                
+                // Muat dari localStorage sebagai fallback
+                const savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+                tampilkanDaftarNotulen(savedNotulens);
+            } catch (error) {
+                console.error('Error memuat notulen:', error);
+                document.getElementById('notulenList').innerHTML = '<p class="text-red-500 text-center py-8">Gagal memuat data notulen</p>';
+            }
+        }
+
+        // Fungsi untuk menampilkan daftar notulen
+        function tampilkanDaftarNotulen(notulens) {
+            const container = document.getElementById('notulenList');
+            
+            if (notulens.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Belum ada notulen tersimpan</p>';
+                return;
+            }
+            
+            container.innerHTML = notulens.map(notulen => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-lg text-gray-800">${notulen.judul}</h3>
+                            <p class="text-gray-600 text-sm mt-1">
+                                ${new Date(notulen.waktu).toLocaleString('id-ID')} • ${notulen.tempat}
+                            </p>
+                            <p class="text-gray-600 text-sm">Notulis: ${notulen.notulis}</p>
+                            <p class="text-gray-500 text-xs mt-2">
+                                Disimpan: ${new Date(notulen.createdAt).toLocaleString('id-ID')}
+                            </p>
+                        </div>
+                        <div class="flex gap-2 ml-4">
+                            <button onclick="lihatDetail('${notulen.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors">
+                                Lihat
+                            </button>
+                            <button onclick="hapusNotulen('${notulen.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Fungsi untuk melihat detail notulen
+        function lihatDetail(id) {
+            const savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+            const notulen = savedNotulens.find(n => n.id === id);
+            
+            if (!notulen) return;
+            
+            currentNotulenId = id;
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('detailContent');
+            
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="text-center border-b pb-4">
+                        <h2 class="text-2xl font-bold">${notulen.judul}</h2>
+                        <p class="text-gray-600">${new Date(notulen.waktu).toLocaleString('id-ID')} • ${notulen.tempat}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Peserta Rapat:</h4>
+                        <ul class="list-disc list-inside text-gray-700">
+                            ${notulen.peserta.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Notulis:</h4>
+                        <p class="text-gray-700">${notulen.notulis}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Agenda:</h4>
+                        <p class="text-gray-700 whitespace-pre-wrap">${notulen.agenda}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Risalah:</h4>
+                        <p class="text-gray-700 whitespace-pre-wrap">${notulen.risalah}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Hasil Rapat:</h4>
+                        <p class="text-gray-700 whitespace-pre-wrap">${notulen.hasil}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Rencana Tindak Lanjut:</h4>
+                        <p class="text-gray-700 whitespace-pre-wrap">${notulen.tindakLanjut}</p>
+                    </div>
+                    
+                    ${notulen.signature ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Tanda Tangan Notulis:</h4>
+                        <img src="${notulen.signature}" alt="Tanda Tangan" class="border border-gray-300 rounded max-w-xs">
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Fungsi untuk menutup modal
+        function tutupModal() {
+            const modal = document.getElementById('detailModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Fungsi untuk menghapus notulen
+        function hapusNotulen(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus notulen ini?')) {
+                let savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+                savedNotulens = savedNotulens.filter(n => n.id !== id);
+                localStorage.setItem('notulens', JSON.stringify(savedNotulens));
+                muatNotulen();
+            }
+        }
+
+        // Fungsi untuk mencetak notulen
+        function cetakNotulen() {
+            if (!currentNotulenId) return;
+            
+            const savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+            const notulen = savedNotulens.find(n => n.id === currentNotulenId);
+            
+            if (!notulen) return;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Notulen Rapat - ${notulen.judul}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+                        .section { margin-bottom: 20px; }
+                        .section h4 { margin-bottom: 10px; font-weight: bold; }
+                        .signature { max-width: 200px; border: 1px solid #ccc; }
+                        @media print { body { margin: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>NOTULEN RAPAT</h1>
+                        <h2>STAI Al-Mas'udiyah Sukabumi</h2>
+                        <h3>${notulen.judul}</h3>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Waktu & Tempat:</h4>
+                        <p>${new Date(notulen.waktu).toLocaleString('id-ID')} • ${notulen.tempat}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Peserta Rapat:</h4>
+                        <ul>${notulen.peserta.map(p => `<li>${p}</li>`).join('')}</ul>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Notulis:</h4>
+                        <p>${notulen.notulis}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Agenda:</h4>
+                        <p style="white-space: pre-wrap;">${notulen.agenda}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Risalah:</h4>
+                        <p style="white-space: pre-wrap;">${notulen.risalah}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Hasil Rapat:</h4>
+                        <p style="white-space: pre-wrap;">${notulen.hasil}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h4>Rencana Tindak Lanjut:</h4>
+                        <p style="white-space: pre-wrap;">${notulen.tindakLanjut}</p>
+                    </div>
+                    
+                    ${notulen.signature ? `
+                    <div class="section">
+                        <h4>Tanda Tangan Notulis:</h4>
+                        <img src="${notulen.signature}" alt="Tanda Tangan" class="signature">
+                    </div>
+                    ` : ''}
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Event listener untuk form submit
+        document.getElementById('notulenForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Ambil data peserta
+            const pesertaInputs = document.querySelectorAll('.peserta-input');
+            const peserta = Array.from(pesertaInputs)
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            
+            if (peserta.length === 0) {
+                alert('Harap masukkan minimal satu peserta rapat');
+                return;
+            }
+            
+            // Siapkan data notulen
+            const data = {
+                judul: document.getElementById('judul').value,
+                waktu: document.getElementById('waktu').value,
+                tempat: document.getElementById('tempat').value,
+                peserta: peserta,
+                notulis: document.getElementById('notulis').value,
+                agenda: document.getElementById('agenda').value,
+                risalah: document.getElementById('risalah').value,
+                hasil: document.getElementById('hasil').value,
+                tindakLanjut: document.getElementById('tindakLanjut').value,
+                signature: currentSignature
+            };
+            
+            try {
+                await simpanNotulen(data);
+                alert('Notulen berhasil disimpan!');
+                resetForm();
+                muatNotulen();
+            } catch (error) {
+                alert('Gagal menyimpan notulen: ' + error.message);
+            }
+        });
+
+        // Muat notulen saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            muatNotulen();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f5daaf80918bc7',t:'MTc1NzkxNTUwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
