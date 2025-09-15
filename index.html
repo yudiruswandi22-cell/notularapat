@@ -9,15 +9,15 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // Konfigurasi Firebase (gunakan konfigurasi Anda sendiri)
-const firebaseConfig = {
-  apiKey: "AIzaSyCOto6k9Yspwnygkte2wvrI1lodhGVNs_k",
-  authDomain: "notulenrapat-d99c3.firebaseapp.com",
-  projectId: "notulenrapat-d99c3",
-  storageBucket: "notulenrapat-d99c3.firebasestorage.app",
-  messagingSenderId: "104635628546",
-  appId: "1:104635628546:web:d2e3b63ca4165718073b1b"
-};
+        // Konfigurasi Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOto6k9Yspwnygkte2wvrI1lodhGVNs_k",
+            authDomain: "notulenrapat-d99c3.firebaseapp.com",
+            projectId: "notulenrapat-d99c3",
+            storageBucket: "notulenrapat-d99c3.firebasestorage.app",
+            messagingSenderId: "104635628546",
+            appId: "1:104635628546:web:d2e3b63ca4165718073b1b"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -152,7 +152,13 @@ const firebaseConfig = {
 
         <!-- Daftar Notulen Tersimpan -->
         <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Notulen Tersimpan</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Notulen Tersimpan</h2>
+                <div id="connectionStatus" class="flex items-center text-sm">
+                    <div class="w-3 h-3 rounded-full bg-gray-400 mr-2"></div>
+                    <span class="text-gray-600">Menghubungkan...</span>
+                </div>
+            </div>
             <div id="notulenList" class="space-y-4 max-h-96 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #cbd5e0 #f7fafc;">
                 <p class="text-gray-500 text-center py-8">Memuat data notulen...</p>
             </div>
@@ -282,39 +288,82 @@ const firebaseConfig = {
         // Fungsi untuk menyimpan notulen
         async function simpanNotulen(data) {
             try {
-                // Simulasi penyimpanan ke Firebase
-                // Dalam implementasi nyata, gunakan konfigurasi Firebase yang benar
-                console.log('Data yang akan disimpan:', data);
+                // Simpan ke Firebase Firestore
+                data.createdAt = new Date().toISOString();
+                const docRef = await addDoc(collection(db, 'notulens'), data);
+                console.log('Notulen berhasil disimpan dengan ID:', docRef.id);
                 
-                // Simulasi ID dokumen
-                const docId = 'doc_' + Date.now();
+                // Simpan ke localStorage sebagai backup
+                let savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+                data.id = docRef.id;
+                savedNotulens.unshift(data);
+                localStorage.setItem('notulens', JSON.stringify(savedNotulens));
                 
-                // Simpan ke localStorage sebagai fallback
+                return docRef.id;
+            } catch (error) {
+                console.error('Error menyimpan ke Firebase:', error);
+                
+                // Fallback ke localStorage jika Firebase gagal
+                const docId = 'local_' + Date.now();
                 let savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
                 data.id = docId;
                 data.createdAt = new Date().toISOString();
                 savedNotulens.unshift(data);
                 localStorage.setItem('notulens', JSON.stringify(savedNotulens));
                 
+                console.log('Data disimpan ke localStorage sebagai fallback');
                 return docId;
-            } catch (error) {
-                console.error('Error menyimpan notulen:', error);
-                throw error;
+            }
+        }
+
+        // Fungsi untuk update status koneksi
+        function updateConnectionStatus(isConnected, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            const dot = statusElement.querySelector('div');
+            const text = statusElement.querySelector('span');
+            
+            if (isConnected) {
+                dot.className = 'w-3 h-3 rounded-full bg-green-500 mr-2';
+                text.textContent = message || 'Terhubung ke Firebase';
+                text.className = 'text-green-600';
+            } else {
+                dot.className = 'w-3 h-3 rounded-full bg-red-500 mr-2';
+                text.textContent = message || 'Mode Offline';
+                text.className = 'text-red-600';
             }
         }
 
         // Fungsi untuk memuat notulen
         async function muatNotulen() {
             try {
-                // Simulasi memuat dari Firebase
-                // Dalam implementasi nyata, gunakan getDocs dari Firestore
+                // Muat dari Firebase Firestore
+                const querySnapshot = await getDocs(collection(db, 'notulens'));
+                const firebaseNotulens = [];
                 
-                // Muat dari localStorage sebagai fallback
-                const savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
-                tampilkanDaftarNotulen(savedNotulens);
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    firebaseNotulens.push(data);
+                });
+                
+                // Urutkan berdasarkan tanggal terbaru
+                firebaseNotulens.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
+                console.log('Berhasil memuat', firebaseNotulens.length, 'notulen dari Firebase');
+                updateConnectionStatus(true, `${firebaseNotulens.length} notulen tersinkron`);
+                
+                // Simpan ke localStorage sebagai backup
+                localStorage.setItem('notulens', JSON.stringify(firebaseNotulens));
+                
+                tampilkanDaftarNotulen(firebaseNotulens);
             } catch (error) {
-                console.error('Error memuat notulen:', error);
-                document.getElementById('notulenList').innerHTML = '<p class="text-red-500 text-center py-8">Gagal memuat data notulen</p>';
+                console.error('Error memuat dari Firebase:', error);
+                updateConnectionStatus(false, 'Gagal terhubung ke Firebase');
+                
+                // Fallback ke localStorage jika Firebase gagal
+                const savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+                console.log('Menggunakan data localStorage sebagai fallback');
+                tampilkanDaftarNotulen(savedNotulens);
             }
         }
 
@@ -424,12 +473,26 @@ const firebaseConfig = {
         }
 
         // Fungsi untuk menghapus notulen
-        function hapusNotulen(id) {
+        async function hapusNotulen(id) {
             if (confirm('Apakah Anda yakin ingin menghapus notulen ini?')) {
-                let savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
-                savedNotulens = savedNotulens.filter(n => n.id !== id);
-                localStorage.setItem('notulens', JSON.stringify(savedNotulens));
-                muatNotulen();
+                try {
+                    // Hapus dari Firebase jika ID bukan dari localStorage
+                    if (!id.startsWith('local_')) {
+                        await deleteDoc(doc(db, 'notulens', id));
+                        console.log('Notulen berhasil dihapus dari Firebase');
+                    }
+                    
+                    // Hapus dari localStorage
+                    let savedNotulens = JSON.parse(localStorage.getItem('notulens') || '[]');
+                    savedNotulens = savedNotulens.filter(n => n.id !== id);
+                    localStorage.setItem('notulens', JSON.stringify(savedNotulens));
+                    
+                    // Muat ulang data
+                    muatNotulen();
+                } catch (error) {
+                    console.error('Error menghapus notulen:', error);
+                    alert('Gagal menghapus notulen: ' + error.message);
+                }
             }
         }
 
@@ -556,5 +619,5 @@ const firebaseConfig = {
             muatNotulen();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f5daaf80918bc7',t:'MTc1NzkxNTUwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f6a9dc055ace82',t:'MTc1NzkyMzk5My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
