@@ -55,7 +55,7 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <div class="flex items-center justify-center mb-4">
@@ -67,9 +67,13 @@
             </div>
         </div>
 
-        <!-- Form Notulen -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <form id="notulenForm" class="space-y-6">
+        <!-- Layout Dua Kolom -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Form Notulen (Kolom Kiri - 2/3) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Form Notulen Rapat</h2>
+                    <form id="notulenForm" class="space-y-6">
                 <!-- Judul Rapat -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Rapat</label>
@@ -146,12 +150,14 @@
                 <div class="flex gap-4">
                     <button type="submit" class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold">Simpan Notulen</button>
                     <button type="button" onclick="resetForm()" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Reset</button>
+                    </div>
+                </form>
                 </div>
-            </form>
-        </div>
+            </div>
 
-        <!-- Daftar Notulen Tersimpan -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
+            <!-- Daftar Notulen Tersimpan (Kolom Kanan - 1/3) -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">Notulen Tersimpan</h2>
                 <div id="connectionStatus" class="flex items-center text-sm">
@@ -159,8 +165,9 @@
                     <span class="text-gray-600">Menghubungkan...</span>
                 </div>
             </div>
-            <div id="notulenList" class="space-y-4 max-h-96 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #cbd5e0 #f7fafc;">
+            <div id="notulenList" class="space-y-4 max-h-[600px] overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #cbd5e0 #f7fafc;">
                 <p class="text-gray-500 text-center py-8">Memuat data notulen...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -178,9 +185,33 @@
                     <button onclick="cetakNotulen()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">Cetak PDF</button>
                     <button onclick="tutupModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">Tutup</button>
                 </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-white rounded-lg shadow-lg p-6 mt-6">
+        <div class="text-center">
+            <div class="flex items-center justify-center mb-4">
+                <img src="https://iili.io/KdXnlX2.png" alt="Logo STAI Al-Mas'udiyah" class="h-12 w-12 mr-3" onerror="this.style.display='none';">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">STAI Al-Mas'udiyah Sukabumi</h3>
+                </div>
+            </div>
+            <div class="text-gray-600 text-sm leading-relaxed">
+                <p class="font-semibold mb-2">Sekretariat STAI Al-Mas'udiyah Sukabumi</p>
+                <p class="mb-2">Jl. Raya Sukabumi - Sagaranten Km. 26 Kp. Buni Ayu</p>
+                <p class="mb-2">Desa Kertaangsana Kec. Nyalindung Kab. Sukabumi 43196</p>
+                <p class="text-blue-600 font-medium">
+                    Web: <a href="https://staimas.ac.id" target="_blank" class="hover:underline">staimas.ac.id</a>
+                </p>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <p class="text-gray-500 text-xs">© 2024 STAI Al-Mas'udiyah Sukabumi. Sistem Notulen Rapat Digital.</p>
+            </div>
+        </div>
+    </footer>
 
     <script>
         let currentSignature = null;
@@ -619,5 +650,5 @@
             muatNotulen();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f6a9dc055ace82',t:'MTc1NzkyMzk5My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f6e713139a898f',t:'MTc1NzkyNjUwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
